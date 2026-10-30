@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leasity — Ultimate Property & Tenant Management Platform</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#0f172a', // Sidebar Slate
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #F8FAFC;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #receiptPrintModalContent, #receiptPrintModalContent * {
+        visibility: visible;
+      }
+      #receiptPrintModalContent {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col md:flex-row">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Mobile Overlay -->
+  <div id="mobileOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-30 hidden md:hidden"></div>
+
+  <!-- SIDEBAR NAVIGATION -->
+  <aside id="sidebar" class="fixed md:static inset-y-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-300 -translate-x-full md:translate-x-0 shrink-0">
+    <!-- Brand Header -->
+    <div class="h-16 px-6 flex items-center justify-between border-b border-slate-800">
+      <div class="flex items-center gap-3">
+        <div class="bg-emerald-500 text-slate-900 p-2 rounded-lg font-black text-xl flex items-center justify-center w-9 h-9 shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid me-0 fa-building-user"></i>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-white text-lg tracking-tight leading-none">Leasity</h1>
+          <span id="roleBadgeLabel" class="text-[10px] text-emerald-400 font-medium tracking-wider uppercase">Landlord (Admin)</span>
+        </div>
+      </div>
+      <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Nav Links -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-white bg-slate-800/80">
+        <i class="fa-solid fa-chart-pie w-5 text-emerald-400"></i> Dashboard
+      </button>
+      <button onclick="switchTab('properties')" id="nav-properties" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-solid fa-city w-5 text-indigo-400"></i> Properties
+      </button>
+      <button onclick="switchTab('tenants')" id="nav-tenants" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-solid fa-users w-5 text-blue-400"></i> Tenants
+      </button>
+      <button onclick="switchTab('payments')" id="nav-payments" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-solid fa-receipt w-5 text-emerald-400"></i> Payments & Receipts
+      </button>
+      <button onclick="switchTab('expenses')" id="nav-expenses" class="nav-btn role-admin w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-solid fa-file-invoice-dollar w-5 text-amber-400"></i> Expenses & P&L
+      </button>
+      <button onclick="switchTab('leases')" id="nav-leases" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-file-contract w-5 text-purple-400"></i> Rent Renewals
+        </div>
+        <span id="leaseExpiringBadgeNav" class="bg-purple-500/20 text-purple-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+      </button>
+      <button onclick="switchTab('overdue')" id="nav-overdue" class="nav-btn w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-triangle-exclamation w-5 text-rose-400"></i> Overdue Rent
+        </div>
+        <span id="overdueBadgeNav" class="bg-rose-500/20 text-rose-400 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+      </button>
+      <button onclick="switchTab('reminders')" id="nav-reminders" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-brands fa-whatsapp w-5 text-green-400"></i> WhatsApp Reminders
+      </button>
+      <button onclick="switchTab('portal')" id="nav-portal" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-solid fa-id-card w-5 text-cyan-400"></i> Tenant Portal View
+      </button>
+      <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn role-admin w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-solid fa-chart-column w-5 text-teal-400"></i> Reports & Exports
+      </button>
+      <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn role-admin w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+        <i class="fa-solid fa-gear w-5 text-slate-400"></i> Settings
+      </button>
+    </nav>
+
+    <!-- Role Switcher Widget -->
+    <div class="p-3 m-3 bg-slate-800/70 rounded-xl border border-slate-700/50 text-xs space-y-2">
+      <div class="flex items-center justify-between text-slate-300">
+        <span class="font-semibold">Active User Role</span>
+        <button onclick="openModal('roleModal')" class="text-emerald-400 hover:text-emerald-300 font-bold text-[11px] underline">Switch</button>
+      </div>
+      <div id="sidebarRoleDisplay" class="text-[11px] font-mono text-emerald-400 bg-slate-900/60 p-1.5 rounded border border-slate-700">
+        Landlord (Full Access)
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT AREA -->
+  <div class="flex-1 flex flex-col min-w-0 min-h-screen">
+
+    <!-- Top Header -->
+    <header class="h-16 bg-white border-b border-slate-200 px-4 md:px-8 flex items-center justify-between sticky top-0 z-20 shadow-sm">
+      <div class="flex items-center gap-3">
+        <button onclick="toggleSidebar()" class="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <h2 id="pageTitle" class="text-xl font-bold text-slate-800">Dashboard</h2>
+      </div>
+
+      <!-- Quick Actions Header Buttons -->
+      <div class="flex items-center gap-2">
+        <button onclick="openModal('recordPaymentModal')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm">
+          <i class="fa-solid fa-plus-circle"></i> <span class="hidden sm:inline">Record Payment</span>
+        </button>
+        <button onclick="openModal('tenantModal')" class="role-admin bg-slate-900 hover:bg-slate-800 text-white text-xs md:text-sm font-semibold px-3.5 py-2 rounded-lg flex items-center gap-2 transition-all shadow-sm">
+          <i class="fa-solid fa-user-plus"></i> <span class="hidden sm:inline">Add Tenant</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dynamic Tab View -->
+    <main class="flex-1 p-4 md:p-8 max-w-7xl w-full mx-auto space-y-6">
+
+      <!-- ================= 1. DASHBOARD VIEW ================= -->
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Expected Rent</p>
+              <h3 id="dashExpected" class="text-2xl font-bold text-slate-900 mt-1">KSh 0</h3>
+              <p class="text-xs text-slate-500 mt-1"><span id="dashTenantTotal">0</span> Active Tenants</p>
+            </div>
+            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-calculator"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Rent Collected</p>
+              <h3 id="dashCollected" class="text-2xl font-bold text-emerald-600 mt-1">KSh 0</h3>
+              <p class="text-xs text-emerald-600 font-medium mt-1"><i class="fa-solid fa-circle-check"></i> <span id="dashPaidCount">0</span> Tenants Paid</p>
+            </div>
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Rent Expiring</p>
+              <h3 id="dashLeasesExpiring" class="text-2xl font-bold text-purple-600 mt-1">0 Rent</h3>
+              <p class="text-xs text-purple-600 font-medium mt-1">Within next 60 days</p>
+            </div>
+            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-file-contract"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Overdue Rent</p>
+              <h3 id="dashOutstanding" class="text-2xl font-bold text-rose-600 mt-1">KSh 0</h3>
+              <p class="text-xs text-rose-600 font-medium mt-1"><i class="fa-solid fa-triangle-exclamation"></i> <span id="dashOverdueCount">0</span> Overdue</p>
+            </div>
+            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Collection Progress Bar -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-slate-800">Monthly Rent Collection Progress</h4>
+              <p class="text-xs text-slate-500">Real-time status based on recorded payments for the current cycle</p>
+            </div>
+            <span id="dashCollectionPercent" class="text-xl font-extrabold text-emerald-600">0%</span>
+          </div>
+          <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+            <div id="dashProgressBar" class="bg-emerald-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500 pt-1">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> Paid (<span id="dashStatusPaidPill">0</span>)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Approaching (<span id="dashStatusApproachingPill">0</span>)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block"></span> Overdue (<span id="dashStatusOverduePill">0</span>)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block"></span> Not Yet Due (<span id="dashStatusNotDuePill">0</span>)</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-money-bill-transfer text-emerald-600"></i> Recent Payment Activity
+              </h4>
+              <button onclick="switchTab('payments')" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">View All</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs text-slate-600">
+                <thead class="bg-slate-50 text-slate-500 uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th class="p-2.5">Tenant</th>
+                    <th class="p-2.5">Unit</th>
+                    <th class="p-2.5">Amount</th>
+                    <th class="p-2.5">Date</th>
+                    <th class="p-2.5 text-right">Receipt</th>
+                  </tr>
+                </thead>
+                <tbody id="dashRecentPaymentsTable" class="divide-y divide-slate-100">
+                  <!-- Dynamic -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col justify-between space-y-4">
+            <div>
+              <h4 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-bolt text-amber-500"></i> Immediate Action Needed
+              </h4>
+              <div id="dashActionList" class="space-y-3">
+                <!-- Dynamic -->
+              </div>
+            </div>
+            <button onclick="switchTab('reminders')" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2.5 rounded-lg transition-all flex items-center justify-center gap-2">
+              <i class="fa-brands fa-whatsapp text-green-600"></i> Open Reminder Dispatcher
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 2. PROPERTIES VIEW ================= -->
+      <section id="tab-properties" class="tab-content space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Property Overview & P&L</h3>
+            <p class="text-xs text-slate-500">Manage rental buildings and monitor occupancy, collections, expenses, and net profit per property.</p>
+          </div>
+          <button onclick="openModal('tenantModal')" class="role-admin bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2">
+            <i class="fa-solid fa-plus"></i> Add Unit / Tenant
+          </button>
+        </div>
+
+        <div id="propertyCardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- ================= 3. TENANTS DIRECTORY ================= -->
+      <section id="tab-tenants" class="tab-content space-y-6 hidden">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+            <input type="text" id="tenantSearchInput" oninput="renderTenantsTable()" placeholder="Search tenant name, phone, or unit number..." class="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500">
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="tenantPropertyFilter" onchange="renderTenantsTable()" class="bg-slate-50 border border-slate-200 text-xs rounded-lg px-3 py-2 text-slate-700">
+              <option value="ALL">All Properties</option>
+            </select>
+            <select id="tenantStatusFilter" onchange="renderTenantsTable()" class="bg-slate-50 border border-slate-200 text-xs rounded-lg px-3 py-2 text-slate-700">
+              <option value="ALL">All Statuses</option>
+              <option value="PAID">Paid</option>
+              <option value="OVERDUE">Overdue</option>
+            </select>
+            <button onclick="openModal('tenantModal')" class="role-admin bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg flex items-center gap-2">
+              <i class="fa-solid fa-user-plus"></i> New Tenant
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Tenant & Unit</th>
+                  <th class="p-3.5">Contact</th>
+                  <th class="p-3.5">Rent Due</th>
+                  <th class="p-3.5">Rent Period</th>
+                  <th class="p-3.5">Balance</th>
+                  <th class="p-3.5">Status</th>
+                  <th class="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tenantsMainTable" class="divide-y divide-slate-100">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 4. PAYMENTS & DIGITAL RECEIPTS ================= -->
+      <section id="tab-payments" class="tab-content space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Rent Payment Ledger & Digital Receipts</h3>
+            <p class="text-xs text-slate-500">Record full or partial payments and generate instant official digital receipts for tenants.</p>
+          </div>
+          <button onclick="openModal('recordPaymentModal')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-plus-circle"></i> Record Payment
+          </button>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+          <i class="fa-solid fa-search text-slate-400 text-xs"></i>
+          <input type="text" id="paymentSearchInput" oninput="renderPaymentsTable()" placeholder="Search payment ledger by tenant, property or transaction ref..." class="w-full text-xs bg-transparent focus:outline-none">
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Receipt # & Tenant</th>
+                  <th class="p-3.5">Amount Paid</th>
+                  <th class="p-3.5">Method & Ref</th>
+                  <th class="p-3.5">Date</th>
+                  <th class="p-3.5 text-right">Digital Receipt</th>
+                </tr>
+              </thead>
+              <tbody id="paymentsMainTable" class="divide-y divide-slate-100">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 5. EXPENSES & P&L ================= -->
+      <section id="tab-expenses" class="tab-content role-admin-section space-y-6 hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Property Expenses & Maintenance Log</h3>
+            <p class="text-xs text-slate-500">Track repairs, caretaker salaries, utility bills, and operating costs.</p>
+          </div>
+          <button onclick="openModal('expenseModal')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Log New Expense
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-400 uppercase">Total Rent Revenue</span>
+            <p id="expTotalRev" class="text-2xl font-bold text-emerald-600 mt-1">KSh 0</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-400 uppercase">Total Expenses</span>
+            <p id="expTotalCost" class="text-2xl font-bold text-amber-600 mt-1">KSh 0</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <span class="text-xs font-semibold text-slate-400 uppercase">Net Operating Profit</span>
+            <p id="expNetProfit" class="text-2xl font-bold text-cyan-600 mt-1">KSh 0</p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Logged Expenses Audit</span>
+            <span id="expenseCountBadge" class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Items</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Property</th>
+                  <th class="p-3.5">Category</th>
+                  <th class="p-3.5">Description</th>
+                  <th class="p-3.5">Amount</th>
+                  <th class="p-3.5">Date</th>
+                  <th class="p-3.5 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="expensesMainTable" class="divide-y divide-slate-100">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 6. RENT EXPIRY & RENEWAL TRACKER ================= -->
+      <section id="tab-leases" class="tab-content space-y-6 hidden">
+        <div class="bg-purple-50 border border-purple-200 p-5 rounded-xl flex items-start gap-4">
+          <div class="bg-purple-600 text-white p-3 rounded-lg text-xl shadow-md">
+            <i class="fa-solid fa-file-contract"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-purple-900 text-base">Rent Expiry & Renewal Management</h3>
+            <p class="text-xs text-purple-700 mt-1">
+              Monitor rent agreements approaching expiration. Prevent vacancy gaps and issue renewal notices or rent adjustments on time.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Active Leases Tracker</span>
+            <span id="leaseCountBadge" class="bg-purple-100 text-purple-800 text-xs px-2.5 py-0.5 rounded-full font-bold">0 Active</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Tenant & Unit</th>
+                  <th class="p-3.5">Lease Start Date</th>
+                  <th class="p-3.5">Lease End (Expiry) Date</th>
+                  <th class="p-3.5">Time Remaining</th>
+                  <th class="p-3.5">Renewal Status</th>
+                  <th class="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="leasesMainTable" class="divide-y divide-slate-100">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 7. OVERDUE RENT VIEW ================= -->
+      <section id="tab-overdue" class="tab-content space-y-6 hidden">
+        <div class="bg-rose-50 border border-rose-200 p-5 rounded-xl flex items-start gap-4">
+          <div class="bg-rose-500 text-white p-3 rounded-lg text-xl shadow-md">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-rose-900 text-base">Overdue Rent Management Center</h3>
+            <p class="text-xs text-rose-700 mt-1">
+              Below are tenants who have passed their scheduled rent due dates with pending balances.
+            </p>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Overdue Tenants List</span>
+            <span id="overdueCountBanner" class="bg-rose-100 text-rose-700 text-xs px-2.5 py-1 rounded-full font-bold">0 Pending</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Tenant</th>
+                  <th class="p-3.5">Property & Unit</th>
+                  <th class="p-3.5">Outstanding Balance</th>
+                  <th class="p-3.5">Original Due Date</th>
+                  <th class="p-3.5">Days Late</th>
+                  <th class="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="overdueMainTable" class="divide-y divide-slate-100">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 8. WHATSAPP REMINDERS ================= -->
+      <section id="tab-reminders" class="tab-content space-y-6 hidden">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-brands fa-whatsapp text-green-500 text-xl"></i> Automated WhatsApp Reminder Dispatcher
+            </h3>
+            <p class="text-xs text-slate-500">Generate pre-filled personalized rent reminder notices directly to WhatsApp.</p>
+          </div>
+
+          <div class="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+            <button onclick="setReminderType('approaching')" id="remTab-approaching" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white">Approaching Due Date</button>
+            <button onclick="setReminderType('due_today')" id="remTab-due_today" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600">Due Today</button>
+            <button onclick="setReminderType('overdue')" id="remTab-overdue" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600">Overdue Payment</button>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-xs font-semibold text-slate-700">Active Message Template Preview</label>
+            <textarea id="reminderTemplatePreview" rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 focus:outline-none" readonly></textarea>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+            <h4 class="font-bold text-xs text-slate-700 uppercase tracking-wider">Eligible Tenants</h4>
+            <span id="reminderEligibleCount" class="bg-slate-200 text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-bold">0</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs text-slate-600">
+              <thead class="bg-slate-50 text-slate-500 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                <tr>
+                  <th class="p-3.5">Tenant</th>
+                  <th class="p-3.5">Property/Unit</th>
+                  <th class="p-3.5">Phone</th>
+                  <th class="p-3.5">Balance Due</th>
+                  <th class="p-3.5 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="reminderDispatchTable" class="divide-y divide-slate-100">
+                <!-- Dynamic -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 9. TENANT PORTAL VIEW ================= -->
+      <section id="tab-portal" class="tab-content space-y-6 hidden">
+        <div class="bg-cyan-50 border border-cyan-200 p-4 rounded-xl flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="bg-cyan-600 text-white p-2.5 rounded-lg">
+              <i class="fa-solid fa-id-card"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-cyan-900 text-sm">Tenant Self-Service Portal Preview</h3>
+              <p class="text-xs text-cyan-700">Select which tenant view to preview below:</p>
+            </div>
+          </div>
+          <select id="portalTenantSelector" onchange="renderTenantPortal()" class="bg-white border border-cyan-300 text-xs rounded-lg px-3 py-2 text-cyan-900 font-semibold">
+            <!-- Dynamic -->
+          </select>
+        </div>
+
+        <div id="tenantPortalContainer" class="space-y-6">
+          <!-- Dynamic -->
+        </div>
+      </section>
+
+      <!-- ================= 10. REPORTS & EXPORTS ================= -->
+      <section id="tab-reports" class="tab-content role-admin-section space-y-6 hidden">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Financial Reports & Data Export</h3>
+            <p class="text-xs text-slate-500">Download CSV summaries or generate comprehensive printable audit statements.</p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <button onclick="exportCSV('payments')" class="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center gap-4 text-left transition-all">
+              <div class="w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-file-csv"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-800 text-xs">Export Payments CSV</h4>
+                <p class="text-[11px] text-slate-500">All recorded transactions ledger</p>
+              </div>
+            </button>
+            <button onclick="exportCSV('tenants')" class="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center gap-4 text-left transition-all">
+              <div class="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-file-csv"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-800 text-xs">Export Tenants CSV</h4>
+                <p class="text-[11px] text-slate-500">Active tenant directory & balances</p>
+              </div>
+            </button>
+            <button onclick="window.print()" class="p-4 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl flex items-center gap-4 text-left transition-all">
+              <div class="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-print"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-800 text-xs">Print Statement</h4>
+                <p class="text-[11px] text-slate-500">Full portfolio financial overview</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= 11. SETTINGS ================= -->
+      <section id="tab-settings" class="tab-content role-admin-section space-y-6 hidden">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6 max-w-2xl">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Platform Settings</h3>
+            <p class="text-xs text-slate-500">Manage global properties, currency, and data backups.</p>
+          </div>
+
+          <div class="space-y-4 pt-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Company / Landlord Name</label>
+              <input type="text" id="settingCompanyName" value="Leasity Properties Ltd" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">Currency Symbol</label>
+              <input type="text" id="settingCurrency" value="KSh" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+            </div>
+            <div class="pt-4 border-t border-slate-200 flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-slate-800 text-xs">Reset Demo Data</h4>
+                <p class="text-[11px] text-slate-500">Restore default initial dataset</p>
+              </div>
+              <button onclick="resetDemoData()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-semibold px-4 py-2 rounded-lg transition-all">Reset Data</button>
+            </div>
+            <div class="pt-4 border-t border-slate-200">
+              <button onclick="saveSettings()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-lg">Save Settings</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- ROLE SWITCHER MODAL -->
+  <div id="roleModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="font-bold text-slate-800 text-base">Select User Role View</h3>
+        <button onclick="closeModal('roleModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <p class="text-xs text-slate-500">Switch permissions to experience Leasity as an Admin Landlord or a Restricted Caretaker / Manager.</p>
+      <div class="space-y-2">
+        <button onclick="setActiveRole('admin')" class="w-full p-3 rounded-xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 flex items-center justify-between transition-all text-left">
+          <div>
+            <div class="font-bold text-xs text-slate-800">Landlord (Admin)</div>
+            <div class="text-[11px] text-slate-500">Full access to P&L, expenses, settings & data export</div>
+          </div>
+          <i class="fa-solid fa-shield-halved text-emerald-600"></i>
+        </button>
+        <button onclick="setActiveRole('caretaker')" class="w-full p-3 rounded-xl border border-slate-200 hover:border-blue-500 hover:bg-blue-50/50 flex items-center justify-between transition-all text-left">
+          <div>
+            <div class="font-bold text-xs text-slate-800">Caretaker / Manager</div>
+            <div class="text-[11px] text-slate-500">Tenant directory, payment recording & reminders only</div>
+          </div>
+          <i class="fa-solid fa-user-tie text-blue-600"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT TENANT MODAL -->
+  <div id="tenantModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 id="tenantModalTitle" class="font-bold text-slate-800 text-base">Add New Tenant & Unit</h3>
+        <button onclick="closeModal('tenantModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="tenantForm" onsubmit="handleTenantSubmit(event)" class="space-y-4">
+        <input type="hidden" id="editTenantId">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Tenant Full Name *</label>
+            <input type="text" id="tenantName" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. John Kamau">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Phone Number (WhatsApp) *</label>
+            <input type="text" id="tenantPhone" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. +254712345678">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Property Building *</label>
+            <input type="text" id="tenantProperty" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. Sunrise Apartments">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Number *</label>
+            <input type="text" id="tenantUnit" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. B4">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Monthly Rent Amount (KSh) *</label>
+            <input type="number" id="tenantRent" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. 25000">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Rent Due Day of Month (1-31) *</label>
+            <input type="number" id="tenantDueDay" min="1" max="31" value="5" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="5">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Lease Start Date *</label>
+            <input type="date" id="tenantLeaseStart" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Lease End Date *</label>
+            <input type="date" id="tenantLeaseEnd" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('tenantModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">Save Tenant</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- RECORD PAYMENT MODAL -->
+  <div id="recordPaymentModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-800 text-base">Record Rent Payment</h3>
+        <button onclick="closeModal('recordPaymentModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="paymentForm" onsubmit="handlePaymentSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Select Tenant *</label>
+          <select id="payTenantSelect" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+            <!-- Dynamic -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Amount Paid (KSh) *</label>
+          <input type="number" id="payAmount" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. 25000">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method *</label>
+            <select id="payMethod" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+              <option value="M-Pesa">M-Pesa</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cash">Cash</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Transaction Ref / Code *</label>
+            <input type="text" id="payRef" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. QHX892KL0">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Date *</label>
+          <input type="date" id="payDate" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('recordPaymentModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg">Record & Generate Receipt</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LOG EXPENSE MODAL -->
+  <div id="expenseModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="font-bold text-slate-800 text-base">Log Property Expense</h3>
+        <button onclick="closeModal('expenseModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="expenseForm" onsubmit="handleExpenseSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Property *</label>
+          <select id="expProperty" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+            <!-- Dynamic -->
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Category *</label>
+          <select id="expCategory" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+            <option value="Maintenance & Repairs">Maintenance & Repairs</option>
+            <option value="Caretaker Salary">Caretaker Salary</option>
+            <option value="Utilities (Water/Electricity)">Utilities (Water/Electricity)</option>
+            <option value="Security">Security</option>
+            <option value="Property Tax / Rates">Property Tax / Rates</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Description *</label>
+          <input type="text" id="expDesc" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. Repaired plumbing on 2nd floor">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Amount (KSh) *</label>
+            <input type="number" id="expAmount" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs" placeholder="e.g. 4500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Date *</label>
+            <input type="date" id="expDate" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <button type="button" onclick="closeModal('expenseModal')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg">Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DIGITAL RECEIPT MODAL -->
+  <div id="receiptModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl" id="receiptPrintModalContent">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <div class="bg-emerald-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-slate-800 text-sm">Official Rent Receipt</h3>
+            <p id="receiptNumber" class="text-[10px] font-mono text-emerald-600 font-bold">RCT-2026-001</p>
+          </div>
+        </div>
+        <button onclick="closeModal('receiptModal')" class="text-slate-400 hover:text-slate-600 print:hidden"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div class="bg-slate-50 p-4 rounded-xl space-y-2 border border-slate-100">
+          <div class="flex justify-between"><span class="text-slate-500">Issued To:</span><span id="receiptTenantName" class="font-bold text-slate-800">John Kamau</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Property / Unit:</span><span id="receiptPropertyUnit" class="font-bold text-slate-800">Sunrise Apartments (B4)</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Payment Date:</span><span id="receiptDate" class="font-medium text-slate-700">Oct 28, 2026</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Method & Ref:</span><span id="receiptMethodRef" class="font-medium text-slate-700">M-Pesa (QHX892KL0)</span></div>
+        </div>
+
+        <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100 flex items-center justify-between">
+          <div>
+            <span class="text-[11px] font-semibold text-emerald-700 uppercase">Amount Received</span>
+            <div id="receiptAmountPaid" class="text-xl font-black text-emerald-800">KSh 25,000</div>
+          </div>
+          <div class="text-right">
+            <span class="text-[11px] font-semibold text-slate-500 uppercase">Remaining Balance</span>
+            <div id="receiptBalanceDue" class="text-sm font-bold text-slate-800">KSh 0</div>
+          </div>
+        </div>
+
+        <div class="text-center text-[10px] text-slate-400 pt-2 border-t border-slate-100">
+          <p>Thank you for your prompt payment! Generated via Leasity Platform.</p>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 print:hidden">
+        <button onclick="window.print()" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg flex items-center justify-center gap-2">
+          <i class="fa-solid fa-print"></i> Print / Download PDF
+        </button>
+        <button onclick="closeModal('receiptModal')" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    // --- STATE MANAGEMENT ---
+    let activeRole = 'admin'; // 'admin' or 'caretaker'
+    let currentTab = 'dashboard';
+    let currentReminderType = 'approaching';
+
+    // Local Storage Mock Data
+    let tenants = JSON.parse(localStorage.getItem('leasity_tenants')) || [
+      { id: 1, name: 'John Kamau', phone: '+254712345678', property: 'Sunrise Apartments', unit: 'B4', rent: 25000, dueDay: 5, leaseStart: '2026-01-01', leaseEnd: '2026-12-31' },
+      { id: 2, name: 'Amina Ali', phone: '+254722987654', property: 'Sunrise Apartments', unit: 'A1', rent: 30000, dueDay: 10, leaseStart: '2025-05-01', leaseEnd: '2026-05-01' },
+      { id: 3, name: 'Brian Ochieng', phone: '+254733112233', property: 'Greenview Heights', unit: 'C2', rent: 45000, dueDay: 1, leaseStart: '2026-03-01', leaseEnd: '2027-02-28' },
+      { id: 4, name: 'Grace Wanjiku', phone: '+254700554433', property: 'Greenview Heights', unit: 'C5', rent: 45000, dueDay: 15, leaseStart: '2025-11-01', leaseEnd: '2026-10-31' },
+      { id: 5, name: 'David Kiprono', phone: '+254744998877', property: 'Savannah Courts', unit: '10', rent: 20000, dueDay: 5, leaseStart: '2026-02-01', leaseEnd: '2027-01-31' }
+    ];
+
+    let payments = JSON.parse(localStorage.getItem('leasity_payments')) || [
+      { id: 'RCT-2026-001', tenantId: 1, amount: 25000, method: 'M-Pesa', ref: 'QHX892KL0', date: '2026-10-02' },
+      { id: 'RCT-2026-002', tenantId: 3, amount: 45000, method: 'Bank Transfer', ref: 'BTM-4491', date: '2026-10-01' },
+      { id: 'RCT-2026-003', tenantId: 5, amount: 10000, method: 'Cash', ref: 'CASH-09', date: '2026-10-04' } // Partial
+    ];
+
+    let expenses = JSON.parse(localStorage.getItem('leasity_expenses')) || [
+      { id: 1, property: 'Sunrise Apartments', category: 'Maintenance & Repairs', desc: 'Repaired main gate motor', amount: 6500, date: '2026-10-05' },
+      { id: 2, property: 'Greenview Heights', category: 'Caretaker Salary', desc: 'October caretaker stipend', amount: 15000, date: '2026-10-01' }
+    ];
+
+    // --- INITIALIZATION ---
+    window.onload = function() {
+      // Set default dates in modals to today
+      const todayStr = new Date().toISOString().split('T')[0];
+      if(document.getElementById('payDate')) document.getElementById('payDate').value = todayStr;
+      if(document.getElementById('expDate')) document.getElementById('expDate').value = todayStr;
+      if(document.getElementById('tenantLeaseStart')) document.getElementById('tenantLeaseStart').value = todayStr;
+      if(document.getElementById('tenantLeaseEnd')) {
+        let nextYear = new Date();
+        nextYear.setFullYear(nextYear.getFullYear() + 1);
+        document.getElementById('tenantLeaseEnd').value = nextYear.toISOString().split('T')[0];
+      }
+
+      refreshAll();
+    };
+
+    function saveData() {
+      localStorage.setItem('leasity_tenants', JSON.stringify(tenants));
+      localStorage.setItem('leasity_payments', JSON.stringify(payments));
+      localStorage.setItem('leasity_expenses', JSON.stringify(expenses));
+    }
+
+    function updateBadges() {
+      // Stub function to update any remaining badge counts if needed
+      const now = new Date();
+      let expiringCount = 0;
+      let overdueCount = 0;
+
+      tenants.forEach(t => {
+        const leaseEnd = new Date(t.leaseEnd);
+        const daysToExpiry = Math.ceil((leaseEnd - now) / (1000 * 60 * 60 * 24));
+        if(daysToExpiry >= 0 && daysToExpiry <= 60) expiringCount++;
+
+        const paid = getTenantPaidThisMonth(t.id);
+        const balance = Math.max(0, Number(t.rent) - paid);
+        if(balance > 0) {
+          const dueDay = t.dueDay || 5;
+          const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+          if(now > dueDate) overdueCount++;
+        }
+      });
+
+      const leaseBadge = document.getElementById('leaseExpiringBadgeNav');
+      if(leaseBadge) leaseBadge.innerText = expiringCount;
+      const overdueBadge = document.getElementById('overdueBadgeNav');
+      if(overdueBadge) overdueBadge.innerText = overdueCount;
+    }
+
+    function refreshAll() {
+      renderDashboard();
+      renderProperties();
+      renderTenantsTable();
+      renderPaymentsTable();
+      renderExpensesTable();
+      renderLeasesTable();
+      renderOverdueTable();
+      renderRemindersTable();
+      renderTenantPortalSelector();
+      populateDropdowns();
+      updateBadges();
+    }
+
+    // --- ROLE SWITCHER ---
+    function setActiveRole(role) {
+      activeRole = role;
+      closeModal('roleModal');
+      const badge = document.getElementById('roleBadgeLabel');
+      const sidebarDisp = document.getElementById('sidebarRoleDisplay');
+      
+      if(role === 'admin') {
+        badge.innerText = 'Landlord (Admin)';
+        sidebarDisp.innerText = 'Landlord (Full Access)';
+        document.querySelectorAll('.role-admin').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.role-admin-section').forEach(el => el.classList.remove('hidden'));
+      } else {
+        badge.innerText = 'Caretaker / Manager';
+        sidebarDisp.innerText = 'Caretaker (Limited Access)';
+        document.querySelectorAll('.role-admin').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.role-admin-section').forEach(el => el.classList.add('hidden'));
+        // If caretaker is on an admin tab, bounce to dashboard
+        if(['expenses', 'reports', 'settings'].includes(currentTab)) {
+          switchTab('dashboard');
+        }
+      }
+      showToast(`Switched view to ${badge.innerText}`, 'info');
+    }
+
+    // --- TAB SWITCHING ---
+    function switchTab(tabId) {
+      currentTab = tabId;
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('text-white', 'bg-slate-800/80'));
+      const activeBtn = document.getElementById(`nav-${tabId}`);
+      if(activeBtn) {
+        activeBtn.classList.add('text-white', 'bg-slate-800/80');
+      }
+
+      // Update Header Title
+      const titles = {
+        dashboard: 'Dashboard Overview',
+        properties: 'Property & Building Management',
+        tenants: 'Tenant Directory & Status',
+        payments: 'Payments & Digital Receipts',
+        expenses: 'Expenses & Net Operating Profit',
+        leases: 'Rent Expiry & Renewal Tracker',
+        overdue: 'Overdue Rent Collection Center',
+        reminders: 'Automated WhatsApp Reminders',
+        portal: 'Tenant Self-Service Portal View',
+        reports: 'Reports & Data Exports',
+        settings: 'Platform Settings'
+      };
+      document.getElementById('pageTitle').innerText = titles[tabId] || 'Dashboard';
+
+      // Close mobile sidebar if open
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('mobileOverlay').classList.add('hidden');
+    }
+
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('mobileOverlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    // --- HELPER CALCULATIONS ---
+    function getTenantPaidThisMonth(tenantId) {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      let paid = 0;
+      payments.forEach(p => {
+        if(p.tenantId === tenantId) {
+          const pDate = new Date(p.date);
+          if(pDate.getMonth() === currentMonth && pDate.getFullYear() === currentYear) {
+            paid += Number(p.amount);
+          }
+        }
+      });
+      return paid;
+    }
+
+    function getTenantStatus(t) {
+      const paid = getTenantPaidThisMonth(t.id);
+      if(paid >= t.rent) return 'PAID';
+
+      const now = new Date();
+      const dueDay = t.dueDay || 5;
+      const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+
+      if(now > dueDate) return 'OVERDUE';
+      
+      const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+      if(diffDays <= 3) return 'APPROACHING';
+
+      return 'NOT_DUE';
+    }
+
+    // --- DASHBOARD RENDERING ---
+    function renderDashboard() {
+      let totalExpected = 0;
+      let totalCollected = 0;
+      let paidCount = 0;
+      let overdueCount = 0;
+      let approachingCount = 0;
+      let notDueCount = 0;
+      let expiringCount = 0;
+
+      const now = new Date();
+
+      tenants.forEach(t => {
+        totalExpected += Number(t.rent);
+        const paid = getTenantPaidThisMonth(t.id);
+        totalCollected += paid;
+
+        const status = getTenantStatus(t);
+        if(status === 'PAID') paidCount++;
+        else if(status === 'OVERDUE') overdueCount++;
+        else if(status === 'APPROACHING') approachingCount++;
+        else notDueCount++;
+
+        // Lease expiring within 60 days
+        const leaseEnd = new Date(t.leaseEnd);
+        const daysToExpiry = Math.ceil((leaseEnd - now) / (1000 * 60 * 60 * 24));
+        if(daysToExpiry >= 0 && daysToExpiry <= 60) {
+          expiringCount++;
+        }
+      });
+
+      const outstanding = Math.max(0, totalExpected - totalCollected);
+      const percent = totalExpected > 0 ? Math.min(100, Math.round((totalCollected / totalExpected) * 100)) : 0;
+
+      document.getElementById('dashExpected').innerText = `KSh ${totalExpected.toLocaleString()}`;
+      document.getElementById('dashCollected').innerText = `KSh ${totalCollected.toLocaleString()}`;
+      document.getElementById('dashOutstanding').innerText = `KSh ${outstanding.toLocaleString()}`;
+      document.getElementById('dashTenantTotal').innerText = tenants.length;
+      document.getElementById('dashPaidCount').innerText = paidCount;
+      document.getElementById('dashOverdueCount').innerText = overdueCount;
+      document.getElementById('dashLeasesExpiring').innerText = `${expiringCount} Leases`;
+
+      document.getElementById('dashCollectionPercent').innerText = `${percent}%`;
+      document.getElementById('dashProgressBar').style.width = `${percent}%`;
+
+      document.getElementById('dashStatusPaidPill').innerText = paidCount;
+      document.getElementById('dashStatusApproachingPill').innerText = approachingCount;
+      document.getElementById('dashStatusOverduePill').innerText = overdueCount;
+      document.getElementById('dashStatusNotDuePill').innerText = notDueCount;
+
+      // Recent payments table
+      const recentTbody = document.getElementById('dashRecentPaymentsTable');
+      recentTbody.innerHTML = '';
+      const sortedPayments = [...payments].sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+      
+      if(sortedPayments.length === 0) {
+        recentTbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No payment transactions recorded yet.</td></tr>`;
+      } else {
+        sortedPayments.forEach(p => {
+          const t = tenants.find(x => x.id === p.tenantId);
+          const tName = t ? t.name : 'Unknown Tenant';
+          const tUnit = t ? `${t.property} (${t.unit})` : '';
+          recentTbody.innerHTML += `
+            <tr class="hover:bg-slate-50/80">
+              <td class="p-2.5 font-bold text-slate-800">${tName}</td>
+              <td class="p-2.5 text-slate-500">${tUnit}</td>
+              <td class="p-2.5 font-bold text-emerald-600">KSh ${Number(p.amount).toLocaleString()}</td>
+              <td class="p-2.5 text-slate-500">${p.date}</td>
+              <td class="p-2.5 text-right"><button onclick="viewReceipt('${p.id}')" class="text-indigo-600 hover:text-indigo-800 font-semibold underline">Receipt</button></td>
+            </tr>
+          `;
+        });
+      }
+
+      // Action items
+      const actionList = document.getElementById('dashActionList');
+      actionList.innerHTML = '';
+      let actionCount = 0;
+
+      if(overdueCount > 0) {
+        actionCount++;
+        actionList.innerHTML += `
+          <div onclick="switchTab('overdue')" class="p-3 bg-rose-50 border border-rose-100 rounded-lg cursor-pointer hover:bg-rose-100/70 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2.5 text-rose-800 text-xs font-semibold">
+              <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> ${overdueCount} tenant(s) have overdue rent
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-rose-400"></i>
+          </div>
+        `;
+      }
+      if(expiringCount > 0) {
+        actionCount++;
+        actionList.innerHTML += `
+          <div onclick="switchTab('leases')" class="p-3 bg-purple-50 border border-purple-100 rounded-lg cursor-pointer hover:bg-purple-100/70 transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2.5 text-purple-800 text-xs font-semibold">
+              <i class="fa-solid fa-file-contract text-purple-600"></i> ${expiringCount} lease(s) expiring within 60 days
+            </div>
+            <i class="fa-solid fa-chevron-right text-xs text-purple-400"></i>
+          </div>
+        `;
+      }
+      if(actionCount === 0) {
+        actionList.innerHTML = `
+          <div class="p-4 text-center text-slate-400 text-xs bg-slate-50 rounded-lg border border-slate-100">
+            <i class="fa-solid fa-circle-check text-emerald-500 text-lg mb-1"></i><br>All rent up to date! No immediate action needed.
+          </div>
+        `;
+      }
+    }
+
+    // --- PROPERTIES RENDERING ---
+    function renderProperties() {
+      const grid = document.getElementById('propertyCardsGrid');
+      grid.innerHTML = '';
+
+      // Group tenants by property
+      const propMap = {};
+      tenants.forEach(t => {
+        if(!propMap[t.property]) {
+          propMap[t.property] = { name: t.property, units: 0, expected: 0, collected: 0, tenants: [] };
+        }
+        propMap[t.property].units++;
+        propMap[t.property].expected += Number(t.rent);
+        propMap[t.property].collected += getTenantPaidThisMonth(t.id);
+        propMap[t.property].tenants.push(t);
+      });
+
+      // Calculate expenses per property
+      const propKeys = Object.keys(propMap);
+      if(propKeys.length === 0) {
+        grid.innerHTML = `<div class="col-span-full p-8 text-center text-slate-400 bg-white rounded-xl border border-slate-200">No properties added yet. Click 'Add Unit / Tenant' to start.</div>`;
+        return;
+      }
+
+      propKeys.forEach(pName => {
+        const p = propMap[pName];
+        let propExp = 0;
+        expenses.forEach(e => {
+          if(e.property === pName) propExp += Number(e.amount);
+        });
+        const netProfit = p.collected - propExp;
+
+        grid.innerHTML += `
+          <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  <i class="fa-solid fa-building"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-slate-800 text-sm">${p.name}</h4>
+                  <span class="text-[11px] text-slate-500">${p.units} Active Units</span>
+                </div>
+              </div>
+              <button onclick="filterTenantsByProperty('${p.name}')" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline">View Units</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <span class="text-slate-400 block text-[10px] uppercase">Expected Rent</span>
+                <span class="font-bold text-slate-800">KSh ${p.expected.toLocaleString()}</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <span class="text-slate-400 block text-[10px] uppercase">Collected</span>
+                <span class="font-bold text-emerald-600">KSh ${p.collected.toLocaleString()}</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <span class="text-slate-400 block text-[10px] uppercase">Expenses</span>
+                <span class="font-bold text-amber-600">KSh ${propExp.toLocaleString()}</span>
+              </div>
+              <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <span class="text-slate-400 block text-[10px] uppercase">Net Profit</span>
+                <span class="font-bold text-cyan-600">KSh ${netProfit.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    function filterTenantsByProperty(propName) {
+      switchTab('tenants');
+      document.getElementById('tenantPropertyFilter').value = propName;
+      renderTenantsTable();
+    }
+
+    // --- TENANTS TABLE ---
+    function renderTenantsTable() {
+      const search = document.getElementById('tenantSearchInput').value.toLowerCase();
+      const propFilter = document.getElementById('tenantPropertyFilter').value;
+      const statusFilter = document.getElementById('tenantStatusFilter').value;
+
+      const tbody = document.getElementById('tenantsMainTable');
+      tbody.innerHTML = '';
+
+      let filtered = tenants.filter(t => {
+        const matchesSearch = t.name.toLowerCase().includes(search) || t.phone.toLowerCase().includes(search) || t.unit.toLowerCase().includes(search) || t.property.toLowerCase().includes(search);
+        const matchesProp = propFilter === 'ALL' || t.property === propFilter;
+        const status = getTenantStatus(t);
+        const matchesStatus = statusFilter === 'ALL' || status === statusFilter;
+        return matchesSearch && matchesProp && matchesStatus;
+      });
+
+      if(filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400">No tenants found matching criteria.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(t => {
+        const paid = getTenantPaidThisMonth(t.id);
+        const balance = Math.max(0, Number(t.rent) - paid);
+        const status = getTenantStatus(t);
+
+        let statusBadge = '';
+        if(status === 'PAID') statusBadge = `<span class="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Paid</span>`;
+        else if(status === 'OVERDUE') statusBadge = `<span class="bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Overdue</span>`;
+        else if(status === 'APPROACHING') statusBadge = `<span class="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-bold text-[10px]">Approaching Due</span>`;
+        else statusBadge = `<span class="bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-bold text-[10px]">Not Yet Due</span>`;
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80">
+            <td class="p-3.5">
+              <div class="font-bold text-slate-800">${t.name}</div>
+              <div class="text-[11px] text-slate-500">${t.property} • Unit ${t.unit}</div>
+            </td>
+            <td class="p-3.5 font-mono text-slate-600">${t.phone}</td>
+            <td class="p-3.5 font-semibold text-slate-700">Day ${t.dueDay} of month</td>
+            <td class="p-3.5 text-slate-500">${t.leaseStart} to ${t.leaseEnd}</td>
+            <td class="p-3.5 font-bold ${balance > 0 ? 'text-rose-600' : 'text-emerald-600'}">KSh ${balance.toLocaleString()}</td>
+            <td class="p-3.5">${statusBadge}</td>
+            <td class="p-3.5 text-right space-x-2">
+              <button onclick="openRecordPaymentFor(${t.id})" class="text-emerald-600 hover:text-emerald-800 font-semibold underline">Pay</button>
+              <button onclick="editTenant(${t.id})" class="role-admin text-indigo-600 hover:text-indigo-800 font-semibold underline">Edit</button>
+              <button onclick="deleteTenant(${t.id})" class="role-admin text-rose-600 hover:text-rose-800 font-semibold">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // --- PAYMENTS TABLE & RECEIPTS ---
+    function renderPaymentsTable() {
+      const search = document.getElementById('paymentSearchInput').value.toLowerCase();
+      const tbody = document.getElementById('paymentsMainTable');
+      tbody.innerHTML = '';
+
+      let filtered = payments.filter(p => {
+        const t = tenants.find(x => x.id === p.tenantId);
+        const tName = t ? t.name.toLowerCase() : '';
+        const tProp = t ? t.property.toLowerCase() : '';
+        return tName.includes(search) || tProp.includes(search) || p.id.toLowerCase().includes(search) || p.ref.toLowerCase().includes(search);
+      }).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+      if(filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No payment records found.</td></tr>`;
+        return;
+      }
+
+      filtered.forEach(p => {
+        const t = tenants.find(x => x.id === p.tenantId);
+        const tName = t ? t.name : 'Unknown Tenant';
+        const tUnit = t ? `${t.property} (${t.unit})` : '';
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80">
+            <td class="p-3.5">
+              <div class="font-bold text-slate-800">${p.id}</div>
+              <div class="text-[11px] text-slate-500">${tName} — ${tUnit}</div>
+            </td>
+            <td class="p-3.5 font-bold text-emerald-600">KSh ${Number(p.amount).toLocaleString()}</td>
+            <td class="p-3.5">
+              <span class="font-semibold text-slate-700">${p.method}</span>
+              <div class="text-[11px] font-mono text-slate-400">Ref: ${p.ref}</div>
+            </td>
+            <td class="p-3.5 text-slate-500">${p.date}</td>
+            <td class="p-3.5 text-right">
+              <button onclick="viewReceipt('${p.id}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg font-semibold text-xs transition-all">View Receipt</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function viewReceipt(receiptId) {
+      const p = payments.find(x => x.id === receiptId);
+      if(!p) return;
+      const t = tenants.find(x => x.id === p.tenantId);
+
+      document.getElementById('receiptNumber').innerText = p.id;
+      document.getElementById('receiptTenantName').innerText = t ? t.name : 'Unknown';
+      document.getElementById('receiptPropertyUnit').innerText = t ? `${t.property} (${t.unit})` : '';
+      document.getElementById('receiptDate').innerText = p.date;
+      document.getElementById('receiptMethodRef').innerText = `${p.method} (${p.ref})`;
+      document.getElementById('receiptAmountPaid').innerText = `KSh ${Number(p.amount).toLocaleString()}`;
+
+      const balance = t ? Math.max(0, Number(t.rent) - getTenantPaidThisMonth(t.id)) : 0;
+      document.getElementById('receiptBalanceDue').innerText = `KSh ${balance.toLocaleString()}`;
+
+      openModal('receiptModal');
+    }
+
+    // --- EXPENSES & P&L ---
+    function renderExpensesTable() {
+      const tbody = document.getElementById('expensesMainTable');
+      tbody.innerHTML = '';
+
+      let totalRev = 0;
+      tenants.forEach(t => totalRev += getTenantPaidThisMonth(t.id));
+
+      let totalCost = 0;
+      expenses.forEach(e => totalCost += Number(e.amount));
+
+      const netProfit = totalRev - totalCost;
+
+      document.getElementById('expTotalRev').innerText = `KSh ${totalRev.toLocaleString()}`;
+      document.getElementById('expTotalCost').innerText = `KSh ${totalCost.toLocaleString()}`;
+      document.getElementById('expNetProfit').innerText = `KSh ${netProfit.toLocaleString()}`;
+      document.getElementById('expenseCountBadge').innerText = `${expenses.length} Items`;
+
+      if(expenses.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No expenses logged yet.</td></tr>`;
+        return;
+      }
+
+      [...expenses].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(e => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80">
+            <td class="p-3.5 font-bold text-slate-800">${e.property}</td>
+            <td class="p-3.5"><span class="bg-amber-50 text-amber-800 px-2 py-0.5 rounded text-[11px] font-semibold">${e.category}</span></td>
+            <td class="p-3.5 text-slate-600">${e.desc}</td>
+            <td class="p-3.5 font-bold text-amber-600">KSh ${Number(e.amount).toLocaleString()}</td>
+            <td class="p-3.5 text-slate-500">${e.date}</td>
+            <td class="p-3.5 text-right"><button onclick="deleteExpense(${e.id})" class="text-rose-600 hover:text-rose-800 font-semibold">Delete</button></td>
+          </tr>
+        `;
+      });
+    }
+
+    // --- LEASE RENEWALS ---
+    function renderLeasesTable() {
+      const tbody = document.getElementById('leasesMainTable');
+      tbody.innerHTML = '';
+
+      const now = new Date();
+      let expiringCount = 0;
+
+      tenants.forEach(t => {
+        const leaseEnd = new Date(t.leaseEnd);
+        const daysRemaining = Math.ceil((leaseEnd - now) / (1000 * 60 * 60 * 24));
+        if(daysRemaining <= 60 && daysRemaining >= 0) expiringCount++;
+
+        let badge = '';
+        if(daysRemaining < 0) badge = `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-bold text-[10px]">Expired</span>`;
+        else if(daysRemaining <= 30) badge = `<span class="bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-bold text-[10px]">Expiring Soon</span>`;
+        else if(daysRemaining <= 60) badge = `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-bold text-[10px]">Upcoming Expiry</span>`;
+        else badge = `<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">Active</span>`;
+
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80">
+            <td class="p-3.5">
+              <div class="font-bold text-slate-800">${t.name}</div>
+              <div class="text-[11px] text-slate-500">${t.property} • Unit ${t.unit}</div>
+            </td>
+            <td class="p-3.5 text-slate-600">${t.leaseStart}</td>
+            <td class="p-3.5 text-slate-600 font-medium">${t.leaseEnd}</td>
+            <td class="p-3.5 font-bold ${daysRemaining <= 30 ? 'text-rose-600' : 'text-slate-700'}">${daysRemaining >= 0 ? `${daysRemaining} Days` : 'Expired'}</td>
+            <td class="p-3.5">${badge}</td>
+            <td class="p-3.5 text-right">
+              <button onclick="renewLease(${t.id})" class="text-indigo-600 hover:text-indigo-800 font-semibold underline">Renew Lease</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      document.getElementById('leaseCountBadge').innerText = `${tenants.length} Active Leases`;
+      document.getElementById('leaseExpiringBadgeNav').innerText = expiringCount;
+    }
+
+    // --- OVERDUE RENT ---
+    function renderOverdueTable() {
+      const tbody = document.getElementById('overdueMainTable');
+      tbody.innerHTML = '';
+
+      const now = new Date();
+      let overdueList = [];
+
+      tenants.forEach(t => {
+        const paid = getTenantPaidThisMonth(t.id);
+        const balance = Math.max(0, Number(t.rent) - paid);
+        if(balance > 0) {
+          const dueDay = t.dueDay || 5;
+          const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+          if(now > dueDate) {
+            const daysLate = Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24));
+            overdueList.push({ tenant: t, balance, dueDate: dueDate.toISOString().split('T')[0], daysLate });
+          }
+        }
+      });
+
+      document.getElementById('overdueCountBanner').innerText = `${overdueList.length} Pending Overdue`;
+      document.getElementById('overdueBadgeNav').innerText = overdueList.length;
+
+      if(overdueList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">No overdue rent balances found!</td></tr>`;
+        return;
+      }
+
+      overdueList.forEach(item => {
+        const t = item.tenant;
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80">
+            <td class="p-3.5 font-bold text-slate-800">${t.name} <div class="text-[11px] font-normal text-slate-500">${t.phone}</div></td>
+            <td class="p-3.5 text-slate-600">${t.property} (${t.unit})</td>
+            <td class="p-3.5 font-bold text-rose-600">KSh ${item.balance.toLocaleString()}</td>
+            <td class="p-3.5 text-slate-600">${item.dueDate}</td>
+            <td class="p-3.5 font-bold text-rose-700">${item.daysLate} Days Late</td>
+            <td class="p-3.5 text-right space-x-2">
+              <button onclick="openRecordPaymentFor(${t.id})" class="text-emerald-600 hover:text-emerald-800 font-semibold underline">Record Payment</button>
+              <button onclick="sendWhatsAppReminder(${t.id}, 'overdue')" class="text-green-600 hover:text-green-800 font-semibold"><i class="fa-brands fa-whatsapp"></i> Remind</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    // --- WHATSAPP REMINDERS ---
+    function setReminderType(type) {
+      currentReminderType = type;
+      ['approaching', 'due_today', 'overdue'].forEach(t => {
+        const btn = document.getElementById(`remTab-${t}`);
+        if(t === type) {
+          btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white';
+        } else {
+          btn.className = 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600';
+        }
+      });
+
+      updateReminderTemplateText();
+      renderRemindersTable();
+    }
+
+    function updateReminderTemplateText() {
+      const templates = {
+        approaching: "Hello [Name], this is a friendly reminder from Leasity that your rent of KSh [Amount] for [Property] Unit [Unit] is due on Day [DueDay] of this month. Kindly arrange payment to avoid any inconvenience.",
+        due_today: "Hello [Name], your rent of KSh [Amount] for [Property] Unit [Unit] is due TODAY. Please send your payment via M-Pesa or Bank transfer and share the confirmation code.",
+        overdue: "URGENT NOTICE: Hello [Name], your rent balance of KSh [Amount] for [Property] Unit [Unit] is now overdue by [Days] days. Please clear your balance immediately to avoid further action."
+      };
+      document.getElementById('reminderTemplatePreview').value = templates[currentReminderType];
+    }
+
+    function renderRemindersTable() {
+      updateReminderTemplateText();
+      const tbody = document.getElementById('reminderDispatchTable');
+      tbody.innerHTML = '';
+
+      let eligible = [];
+      const now = new Date();
+
+      tenants.forEach(t => {
+        const paid = getTenantPaidThisMonth(t.id);
+        const balance = Math.max(0, Number(t.rent) - paid);
+        if(balance <= 0) return; // already paid
+
+        const dueDay = t.dueDay || 5;
+        const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+        const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+
+        if(currentReminderType === 'approaching' && diffDays >= 1 && diffDays <= 3) {
+          eligible.push({ tenant: t, balance, note: `Due in ${diffDays} days` });
+        } else if(currentReminderType === 'due_today' && diffDays === 0) {
+          eligible.push({ tenant: t, balance, note: `Due Today` });
+        } else if(currentReminderType === 'overdue' && now > dueDate) {
+          const daysLate = Math.ceil((now - dueDate) / (1000 * 60 * 60 * 24));
+          eligible.push({ tenant: t, balance, note: `${daysLate} days late` });
+        }
+      });
+
+      document.getElementById('reminderEligibleCount').innerText = `${eligible.length} Eligible`;
+
+      if(eligible.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">No tenants eligible for this reminder category right now.</td></tr>`;
+        return;
+      }
+
+      eligible.forEach(item => {
+        const t = item.tenant;
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50/80">
+            <td class="p-3.5 font-bold text-slate-800">${t.name}</td>
+            <td class="p-3.5 text-slate-600">${t.property} (${t.unit})</td>
+            <td class="p-3.5 font-mono text-slate-600">${t.phone}</td>
+            <td class="p-3.5 font-bold text-rose-600">KSh ${item.balance.toLocaleString()} <span class="text-[10px] font-normal text-slate-400 block">${item.note}</span></td>
+            <td class="p-3.5 text-right">
+              <button onclick="sendWhatsAppReminder(${t.id}, '${currentReminderType}')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 ml-auto">
+                <i class="fa-brands fa-whatsapp"></i> Send WhatsApp
+              </button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    function sendWhatsAppReminder(tenantId, type) {
+      const t = tenants.find(x => x.id === tenantId);
+      if(!t) return;
+      const paid = getTenantPaidThisMonth(t.id);
+      const balance = Math.max(0, Number(t.rent) - paid);
+
+      let msg = "";
+      if(type === 'approaching') {
+        msg = `Hello ${t.name}, friendly reminder from Leasity that your rent of KSh ${balance.toLocaleString()} for ${t.property} Unit ${t.unit} is due on Day ${t.dueDay} of this month.`;
+      } else if(type === 'due_today') {
+        msg = `Hello ${t.name}, your rent of KSh ${balance.toLocaleString()} for ${t.property} Unit ${t.unit} is due TODAY. Please remit payment promptly.`;
+      } else {
+        msg = `URGENT NOTICE: Hello ${t.name}, your rent balance of KSh ${balance.toLocaleString()} for ${t.property} Unit ${t.unit} is overdue. Please settle immediately.`;
+      }
+
+      const encoded = encodeURIComponent(msg);
+      const cleanPhone = t.phone.replace(/[^0-9]/g, '');
+      window.open(`https://wa.me/${cleanPhone}?text=${encoded}`, '_blank');
+      showToast(`WhatsApp reminder opened for ${t.name}`, 'success');
+    }
+
+    // --- TENANT PORTAL VIEW ---
+    function renderTenantPortalSelector() {
+      const sel = document.getElementById('portalTenantSelector');
+      sel.innerHTML = '';
+      tenants.forEach(t => {
+        sel.innerHTML += `<option value="${t.id}">${t.name} — ${t.property} (${t.unit})</option>`;
+      });
+      renderTenantPortal();
+    }
+
+    function renderTenantPortal() {
+      const tenantId = Number(document.getElementById('portalTenantSelector').value);
+      const t = tenants.find(x => x.id === tenantId);
+      const container = document.getElementById('tenantPortalContainer');
+      if(!t) {
+        container.innerHTML = `<div class="p-6 text-center text-slate-400 bg-white rounded-xl">No tenant selected.</div>`;
+        return;
+      }
+
+      const paid = getTenantPaidThisMonth(t.id);
+      const balance = Math.max(0, Number(t.rent) - paid);
+
+      // Tenant's payment history
+      let historyHtml = '';
+      const tPayments = payments.filter(p => p.tenantId === t.id);
+      if(tPayments.length === 0) {
+        historyHtml = `<p class="text-xs text-slate-400 p-4">No payment history recorded.</p>`;
+      } else {
+        tPayments.forEach(p => {
+          historyHtml += `
+            <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg text-xs border border-slate-100 mb-2">
+              <div>
+                <span class="font-bold text-slate-800">${p.id}</span>
+                <span class="text-slate-500 block text-[10px]">${p.date} • ${p.method} (${p.ref})</span>
+              </div>
+              <div class="text-right">
+                <span class="font-bold text-emerald-600">KSh ${Number(p.amount).toLocaleString()}</span>
+                <button onclick="viewReceipt('${p.id}')" class="block text-[10px] text-indigo-600 underline font-semibold">View Receipt</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      container.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center font-bold text-lg">
+                <i class="fa-solid fa-user"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-800 text-base">${t.name}</h4>
+                <span class="text-xs text-slate-500 font-mono">${t.phone}</span>
+              </div>
+            </div>
+            <div class="border-t border-slate-100 pt-3 space-y-2 text-xs">
+              <div class="flex justify-between"><span class="text-slate-500">Property:</span><span class="font-bold text-slate-800">${t.property}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Unit Number:</span><span class="font-bold text-slate-800">Unit ${t.unit}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Monthly Rent:</span><span class="font-bold text-slate-800">KSh ${Number(t.rent).toLocaleString()}</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Due Day:</span><span class="font-bold text-slate-800">Day ${t.dueDay} of month</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Lease Period:</span><span class="font-medium text-slate-700">${t.leaseStart} to ${t.leaseEnd}</span></div>
+            </div>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm mb-3">Current Balance Due</h4>
+              <div class="p-5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div>
+                  <span class="text-xs text-slate-500 uppercase font-semibold">Outstanding Balance</span>
+                  <div class="text-2xl font-black ${balance > 0 ? 'text-rose-600' : 'text-emerald-600'}">KSh ${balance.toLocaleString()}</div>
+                </div>
+                <div class="w-10 h-10 rounded-full ${balance > 0 ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'} flex items-center justify-center">
+                  <i class="fa-solid ${balance > 0 ? 'fa-triangle-exclamation' : 'fa-check'}"></i>
+                </div>
+              </div>
+            </div>
+            <button onclick="openRecordPaymentFor(${t.id})" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-3 rounded-xl shadow-sm transition-all">
+              Make Payment / Submit M-Pesa Code
+            </button>
+          </div>
+
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <h4 class="font-bold text-slate-800 text-sm">My Payment History</h4>
+            <div class="max-h-64 overflow-y-auto pr-1">
+              ${historyHtml}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- FORM HANDLERS & MODALS ---
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      if(id === 'tenantModal') {
+        document.getElementById('tenantForm').reset();
+        document.getElementById('editTenantId').value = '';
+        document.getElementById('tenantModalTitle').innerText = 'Add New Tenant & Unit';
+      }
+    }
+
+    function populateDropdowns() {
+      // Record payment tenant dropdown
+      const paySel = document.getElementById('payTenantSelect');
+      if(paySel) {
+        paySel.innerHTML = '';
+        tenants.forEach(t => {
+          paySel.innerHTML += `<option value="${t.id}">${t.name} — ${t.property} (${t.unit}) [Rent: KSh ${Number(t.rent).toLocaleString()}]</option>`;
+        });
+      }
+
+      // Expense property dropdown
+      const expPropSel = document.getElementById('expProperty');
+      if(expPropSel) {
+        expPropSel.innerHTML = '';
+        const props = [...new Set(tenants.map(t => t.property))];
+        if(props.length === 0) {
+          expPropSel.innerHTML = `<option value="General Property">General Property</option>`;
+        } else {
+          props.forEach(p => {
+            expPropSel.innerHTML += `<option value="${p}">${p}</option>`;
+          });
+        }
+      }
+
+      // Tenant property filter dropdown
+      const tenantPropFilter = document.getElementById('tenantPropertyFilter');
+      if(tenantPropFilter) {
+        const currentVal = tenantPropFilter.value;
+        tenantPropFilter.innerHTML = `<option value="ALL">All Properties</option>`;
+        const props = [...new Set(tenants.map(t => t.property))];
+        props.forEach(p => {
+          tenantPropFilter.innerHTML += `<option value="${p}">${p}</option>`;
+        });
+        tenantPropFilter.value = currentVal;
+      }
+    }
+
+    function openRecordPaymentFor(tenantId) {
+      openModal('recordPaymentModal');
+      document.getElementById('payTenantSelect').value = tenantId;
+      const t = tenants.find(x => x.id === tenantId);
+      if(t) {
+        const paid = getTenantPaidThisMonth(t.id);
+        const bal = Math.max(0, Number(t.rent) - paid);
+        document.getElementById('payAmount').value = bal > 0 ? bal : t.rent;
+      }
+    }
+
+    function handleTenantSubmit(event) {
+      event.preventDefault();
+      const editId = document.getElementById('editTenantId').value;
+      const name = document.getElementById('tenantName').value;
+      const phone = document.getElementById('tenantPhone').value;
+      const property = document.getElementById('tenantProperty').value;
+      const unit = document.getElementById('tenantUnit').value;
+      const rent = Number(document.getElementById('tenantRent').value);
+      const dueDay = Number(document.getElementById('tenantDueDay').value);
+      const leaseStart = document.getElementById('tenantLeaseStart').value;
+      const leaseEnd = document.getElementById('tenantLeaseEnd').value;
+
+      if(editId) {
+        // Edit existing
+        const t = tenants.find(x => x.id === Number(editId));
+        if(t) {
+          t.name = name;
+          t.phone = phone;
+          t.property = property;
+          t.unit = unit;
+          t.rent = rent;
+          t.dueDay = dueDay;
+          t.leaseStart = leaseStart;
+          t.leaseEnd = leaseEnd;
+        }
+        showToast('Tenant updated successfully!', 'success');
+      } else {
+        // Create new
+        const newId = tenants.length > 0 ? Math.max(...tenants.map(x => x.id)) + 1 : 1;
+        tenants.push({ id: newId, name, phone, property, unit, rent, dueDay, leaseStart, leaseEnd });
+        showToast('New tenant added successfully!', 'success');
+      }
+
+      saveData();
+      closeModal('tenantModal');
+      refreshAll();
+    }
+
+    function editTenant(id) {
+      const t = tenants.find(x => x.id === id);
+      if(!t) return;
+      document.getElementById('editTenantId').value = t.id;
+      document.getElementById('tenantName').value = t.name;
+      document.getElementById('tenantPhone').value = t.phone;
+      document.getElementById('tenantProperty').value = t.property;
+      document.getElementById('tenantUnit').value = t.unit;
+      document.getElementById('tenantRent').value = t.rent;
+      document.getElementById('tenantDueDay').value = t.dueDay || 5;
+      document.getElementById('tenantLeaseStart').value = t.leaseStart;
+      document.getElementById('tenantLeaseEnd').value = t.leaseEnd;
+      document.getElementById('tenantModalTitle').innerText = 'Edit Tenant & Unit';
+      openModal('tenantModal');
+    }
+
+    function deleteTenant(id) {
+      if(confirm('Are you sure you want to delete this tenant?')) {
+        tenants = tenants.filter(x => x.id !== id);
+        saveData();
+        refreshAll();
+        showToast('Tenant deleted.', 'info');
+      }
+    }
+
+    function handlePaymentSubmit(event) {
+      event.preventDefault();
+      const tenantId = Number(document.getElementById('payTenantSelect').value);
+      const amount = Number(document.getElementById('payAmount').value);
+      const method = document.getElementById('payMethod').value;
+      const ref = document.getElementById('payRef').value;
+      const date = document.getElementById('payDate').value;
+
+      const rctNum = `RCT-2026-${String(payments.length + 1).padStart(3, '0')}`;
+      payments.push({ id: rctNum, tenantId, amount, method, ref, date });
+
+      saveData();
+      closeModal('recordPaymentModal');
+      document.getElementById('paymentForm').reset();
+      refreshAll();
+      showToast(`Payment recorded successfully (${rctNum})`, 'success');
+      viewReceipt(rctNum);
+    }
+
+    function handleExpenseSubmit(event) {
+      event.preventDefault();
+      const property = document.getElementById('expProperty').value;
+      const category = document.getElementById('expCategory').value;
+      const desc = document.getElementById('expDesc').value;
+      const amount = Number(document.getElementById('expAmount').value);
+      const date = document.getElementById('expDate').value;
+
+      const newId = expenses.length > 0 ? Math.max(...expenses.map(x => x.id)) + 1 : 1;
+      expenses.push({ id: newId, property, category, desc, amount, date });
+
+      saveData();
+      closeModal('expenseModal');
+      document.getElementById('expenseForm').reset();
+      refreshAll();
+      showToast('Expense logged successfully!', 'success');
+    }
+
+    function deleteExpense(id) {
+      if(confirm('Are you sure you want to delete this expense log?')) {
+        expenses = expenses.filter(x => x.id !== id);
+        saveData();
+        refreshAll();
+        showToast('Expense removed.', 'info');
+      }
+    }
+
+    function renewLease(tenantId) {
+      const t = tenants.find(x => x.id === tenantId);
+      if(!t) return;
+      let currEnd = new Date(t.leaseEnd);
+      currEnd.setFullYear(currEnd.getFullYear() + 1);
+      t.leaseStart = t.leaseEnd;
+      t.leaseEnd = currEnd.toISOString().split('T')[0];
+      saveData();
+      refreshAll();
+      showToast(`Lease successfully renewed for ${t.name} until ${t.leaseEnd}`, 'success');
+    }
+
+    function exportCSV(type) {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      if(type === 'payments') {
+        csvContent += "ReceiptID,Tenant,Amount,Method,Reference,Date\n";
+        payments.forEach(p => {
+          const t = tenants.find(x => x.id === p.tenantId);
+          csvContent += `${p.id},"${t ? t.name : 'Unknown'}",${p.amount},${p.method},${p.ref},${p.date}\n`;
+        });
+      } else {
+        csvContent += "Name,Phone,Property,Unit,Rent,DueDay,LeaseStart,LeaseEnd\n";
+        tenants.forEach(t => {
+          csvContent += `"${t.name}",${t.phone},"${t.property}",${t.unit},${t.rent},${t.dueDay},${t.leaseStart},${t.leaseEnd}\n`;
+        });
+      }
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `leasity_${type}_export.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast(`Exported ${type} CSV successfully!`, 'success');
+    }
+
+    function resetDemoData() {
+      if(confirm('Reset all data to default demo state?')) {
+        localStorage.clear();
+        location.reload();
+      }
+    }
+
+    function saveSettings() {
+      showToast('Settings saved successfully!', 'success');
+    }
+
+    // --- TOAST NOTIFICATIONS ---
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      let bg = 'bg-slate-900 text-white';
+      let icon = 'fa-circle-check text-emerald-400';
+      if(type === 'success') { bg = 'bg-slate-900 text-white'; icon = 'fa-circle-check text-emerald-400'; }
+      else if(type === 'info') { bg = 'bg-slate-900 text-white'; icon = 'fa-circle-info text-cyan-400'; }
+      
+      toast.className = `${bg} px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 text-xs font-semibold pointer-events-auto transform translate-y-2 opacity-0 transition-all duration-300`;
+      toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 10);
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-2', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
